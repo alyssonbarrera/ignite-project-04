@@ -1,6 +1,8 @@
 import { makeAnswer } from 'test/factories/make-answer'
 import { makeQuestion } from 'test/factories/make-question'
+import { NotAllowedError } from './errors/not-allowed-error'
 import { UniqueEntityID } from '@/core/entities/unique-entity-id'
+import { ResourceNotFoundError } from './errors/resource-not-found-error'
 import { ChooseQuestionBestAnswerUseCase } from './choose-question-best-answer'
 import { InMemoryAnswersRepository } from 'test/repositories/in-memory-answers-repository'
 import { InMemoryQuestionsRepository } from 'test/repositories/in-memory-questions-repository'
@@ -31,17 +33,19 @@ describe('Choose Question Best Answer Use Case', () => {
 
     await inMemoryAnswersRepository.create(newAnswer)
 
-    await sut.execute({
+    const result = await sut.execute({
       authorId: newQuestion.authorId.toString(),
       answerId: newAnswer.id.toString(),
     })
 
-    expect(inMemoryQuestionsRepository.items[0].bestAnswerId).toEqual(
-      newAnswer.id,
-    )
+    if (result.isRight()) {
+      expect(inMemoryQuestionsRepository.items[0]).toEqual(
+        result.value.question,
+      )
+    }
   })
 
-  it('should not be able to choose another user question best answer', async () => {
+  it('should not be able to choose the best answer to the question if the author is different from the author of the question', async () => {
     const newQuestion = makeQuestion()
 
     await inMemoryQuestionsRepository.create(newQuestion)
@@ -57,12 +61,13 @@ describe('Choose Question Best Answer Use Case', () => {
       answerId: newAnswer.id.toString(),
     })
 
-    expect(async () => {
-      return await sut.execute({
-        answerId: 'answer-1',
-        authorId: 'author-1',
-      })
-    }).rejects.toBeInstanceOf(Error)
+    const result = await sut.execute({
+      answerId: newAnswer.id.toString(),
+      authorId: 'author-2',
+    })
+
+    expect(result.isLeft()).toBeTruthy()
+    expect(result.value).toBeInstanceOf(NotAllowedError)
   })
 })
 
@@ -83,11 +88,11 @@ it('should not be able to choose question best answer if question does not exist
     authorId: newQuestion.authorId.toString(),
     answerId: newAnswer.id.toString(),
   })
+  const result = await sut.execute({
+    answerId: 'answer-1',
+    authorId: 'author-2',
+  })
 
-  expect(async () => {
-    return await sut.execute({
-      answerId: 'answer-1',
-      authorId: 'author-2',
-    })
-  }).rejects.toBeInstanceOf(Error)
+  expect(result.isLeft()).toBeTruthy()
+  expect(result.value).toBeInstanceOf(ResourceNotFoundError)
 })

@@ -1,4 +1,3 @@
-import { UniqueEntityID } from '@/core/entities/unique-entity-id'
 import { AnswerQuestionUseCase } from './answer-question'
 import { InMemoryAnswersRepository } from 'test/repositories/in-memory-answers-repository'
 
@@ -12,15 +11,13 @@ describe('Answer Question Use Case', () => {
   })
 
   it('should be able to create an answer', async () => {
-    const { answer } = await sut.execute({
+    const result = await sut.execute({
       questionId: '1',
       instructorId: '1',
       content: 'Answer content',
     })
 
-    expect(answer.id).toBeTruthy()
-    expect(answer.id).toBeInstanceOf(UniqueEntityID)
-    expect(answer.content).toEqual('Answer content')
-    expect(inMemoryAnswersRepository.items[0].id).toEqual(answer.id)
+    expect(result.isRight()).toBeTruthy()
+    expect(inMemoryAnswersRepository.items[0]).toEqual(result.value?.answer)
   })
 })

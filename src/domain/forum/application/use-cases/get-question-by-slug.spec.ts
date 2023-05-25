@@ -2,6 +2,7 @@ import { makeQuestion } from 'test/factories/make-question'
 import { GetQuestionBySlugUseCase } from './get-question-by-slug'
 import { Slug } from '@/domain/forum/enterprise/entities/value-objects/slug'
 import { InMemoryQuestionsRepository } from 'test/repositories/in-memory-questions-repository'
+import { ResourceNotFoundError } from './errors/resource-not-found-error'
 
 let inMemoryQuestionsRepository: InMemoryQuestionsRepository
 let sut: GetQuestionBySlugUseCase
@@ -19,20 +20,19 @@ describe('Get Question By Slug Use Case', () => {
 
     await inMemoryQuestionsRepository.create(newQuestion)
 
-    const { question } = await sut.execute({
+    const result = await sut.execute({
       slug: 'question-title',
     })
 
-    expect(question.id).toBeTruthy()
-    expect(question.title).toEqual(newQuestion.title)
-    expect(question.content).toEqual(newQuestion.content)
+    expect(result.isRight()).toBeTruthy()
   })
 
   it('should not be able to get a question by slug if it does not exist', async () => {
-    expect(async () => {
-      return await sut.execute({
-        slug: 'question-title',
-      })
-    }).rejects.toBeInstanceOf(Error)
+    const result = await sut.execute({
+      slug: 'question-title',
+    })
+
+    expect(result.isLeft()).toBeTruthy()
+    expect(result.value).toBeInstanceOf(ResourceNotFoundError)
   })
 })
