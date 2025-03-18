@@ -31,6 +31,12 @@ describe('Get Question By Slug Use Case', () => {
     })
 
     expect(result.isRight()).toBeTruthy()
+    expect(result.value).toMatchObject({
+      question: expect.objectContaining({
+        title: newQuestion.title,
+        slug: newQuestion.slug,
+      }),
+    })
   })
 
   it('should not be able to get a question by slug if it does not exist', async () => {
