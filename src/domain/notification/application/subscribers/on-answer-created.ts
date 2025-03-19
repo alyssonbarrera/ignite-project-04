@@ -27,9 +27,9 @@ export class OnAnswerCreated implements EventHandler {
     if (question) {
       await this.sendNotification.execute({
         recipientId: question.authorId.toString(),
-        title: `Nova resposta em ${question.title
+        title: `Nova resposta em "${question.title
           .substring(0, 40)
-          .concat('...')} `,
+          .concat('...')}"`,
         content: answer.excerpt,
       })
     }
